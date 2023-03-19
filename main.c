@@ -102,14 +102,28 @@ int main(void) {
         } else if (commands[i] == OUTPUT) {
             putchar(memory[pointer]);
 
+/* TODO
+* include the case when loops are written incorrectly (possible memory leaks)
+*/
         } else if (commands[i] == OPEN_LOOP && memory[pointer] == 0) {
+            size_t bracket_counter = 0;
+            i++;
             while (1) {
-                if (commands[i] == CLOSE_LOOP) break;
+                if (commands[i] == CLOSE_LOOP && bracket_counter == 0) break;
+
+                if (commands[i] == OPEN_LOOP) bracket_counter++;
+                else if (commands[i] == CLOSE_LOOP) bracket_counter--;
                 i++;
             }
+
         } else if (commands[i] == CLOSE_LOOP && memory[pointer] != 0) {
+            size_t bracket_counter = 0;
+            i--;
             while (1) {
-                if (commands[i] == OPEN_LOOP) break;
+                if (commands[i] == OPEN_LOOP && bracket_counter == 0) break;
+
+                if (commands[i] == CLOSE_LOOP) bracket_counter++;
+                else if (commands[i] == OPEN_LOOP) bracket_counter--;
                 i--;
             }
         }
@@ -124,29 +138,3 @@ int main(void) {
 
     return 0;
 }
-
-/*
-Attempted implementation of loops:
-
-opening:
-for (size_t bracket_counter = 0; i < command_counter; i++) {
-    if (commands[i] == CLOSE_LOOP && bracket_counter == 0) break;
-
-    if (commands[i] == OPEN_LOOP) {
-        bracket_counter++;
-    } else if (commands[i] == CLOSE_LOOP) {
-        bracket_counter--;
-    }
-}
-
-closing:
-for (size_t bracket_counter = 0; i >= 0; i--) {
-    if (commands[i] == OPEN_LOOP && bracket_counter == 0) break;
-
-    if (commands[i] == CLOSE_LOOP) {
-        bracket_counter++;
-    } else if (commands[i] == OPEN_LOOP) {
-        bracket_counter--;
-    }
-}
-*/
