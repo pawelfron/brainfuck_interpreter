@@ -19,7 +19,6 @@ void closing_jump(size_t pointer, unsigned char *memory, FILE *file); // ]
 #define MEMORY_SIZE 1024
 
 int main(void) {
-
     /* 
     Some bs to change the behaviour of the terminal.
     It causes the getchar() function to get just a single character from stdin, without the need to press enter.
@@ -43,7 +42,7 @@ int main(void) {
         return 1;
     }
 
-    char character = fgetc(file);
+    unsigned char character = fgetc(file);
     while (!feof(file)) {
         switch (character) {
             case '>':
@@ -73,7 +72,7 @@ int main(void) {
     free(memory);
 
     /* Reversing the changes to the terminal made by the bs above */
-    tcsetattr( STDIN_FILENO, TCSANOW, &oldattr);
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldattr);
     /* --- */
 
     return 0;
