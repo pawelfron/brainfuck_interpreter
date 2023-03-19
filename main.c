@@ -15,6 +15,7 @@ void output(unsigned char *cell); // .
 void opening_jump(size_t pointer, unsigned char *memory, FILE *file); // [
 void closing_jump(size_t pointer, unsigned char *memory, FILE *file); // ]
 
+// size of the brainfuck memory array
 #define MEMORY_SIZE 1024
 
 int main(void) {
@@ -84,7 +85,6 @@ void increment_pointer(size_t *pointer) {
         exit(1);
     }
     *pointer += 1;
-
 }
 
 void decrement_pointer(size_t *pointer) {
@@ -105,10 +105,6 @@ void decrement_cell(unsigned char *cell) {
     *cell -= 1;
 }
 
-void input(unsigned char *cell) {
-    *cell = getchar();
-}
+void input(unsigned char *cell) { *cell = getchar(); }
 
-void output(unsigned char *cell) {
-    putchar(*cell);
-}
+void output(unsigned char *cell) { putchar(*cell); }
