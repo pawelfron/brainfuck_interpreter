@@ -1,10 +1,8 @@
-#include <stdio.h>
-#include <stdlib.h>
-
-#define MEMORY_SIZE 1024
+#include "bf_functions.c"
 
 int main(void) {
     unsigned char memory[MEMORY_SIZE];
+    size_t pointer = 0;
     for (size_t i = 0; i < MEMORY_SIZE; i++)
         memory[i] = 0;
 
@@ -19,7 +17,6 @@ int main(void) {
         printf("%c", character);
         character = fgetc(file);
     }
-        
 
     fclose(file);
     return 0;
