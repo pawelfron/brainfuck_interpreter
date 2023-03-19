@@ -6,8 +6,8 @@
 #include <unistd.h>
 /* ---- */
 
-void move_left(size_t *pointer); // >
-void move_right(size_t *pointer); // <
+void move_left(size_t *pointer); // <
+void move_right(size_t *pointer); // >
 void increment(unsigned char *cell); // +
 void decrement(unsigned char *cell); // -
 void input(unsigned char *cell); // ,
@@ -28,7 +28,7 @@ void close_loop(); // ]
 #define MEMORY_SIZE 1024
 
 char *read_source_file(char *name, size_t *command_count) {
-    char buffer[10000];
+    unsigned char buffer[10000];
     size_t counter = 0;
     FILE *file = fopen(name, "rb");
     if (file == NULL) {
@@ -36,17 +36,17 @@ char *read_source_file(char *name, size_t *command_count) {
         exit(1);
     }
 
-    char character = fgetc(file);
+    unsigned char character = fgetc(file);
     while(!feof(file)) {
-        if (character == '>') buffer[counter] = MOVE_LEFT;
-        else if (character == '<') buffer[counter] = MOVE_RIGHT;
-        else if (character == '+') buffer[counter] = INCREMENT;
-        else if (character == '-') buffer[counter] = DECREMENT;
-        else if (character == ',') buffer[counter] = INPUT;
-        else if (character == '.') buffer[counter] = OUTPUT;
-        else if (character == '[') buffer[counter] = OPEN_LOOP;
-        else if (character == ']') buffer[counter] = CLOSE_LOOP;
-        counter++;
+        if (character == '<') buffer[counter++] = MOVE_LEFT;
+        else if (character == '>') buffer[counter++] = MOVE_RIGHT;
+        else if (character == '+') buffer[counter++] = INCREMENT;
+        else if (character == '-') buffer[counter++] = DECREMENT;
+        else if (character == ',') buffer[counter++] = INPUT;
+        else if (character == '.') buffer[counter++] = OUTPUT;
+        else if (character == '[') buffer[counter++] = OPEN_LOOP;
+        else if (character == ']') buffer[counter++] = CLOSE_LOOP;
+
         character = fgetc(file);
     }
 
@@ -78,10 +78,10 @@ int main(void) {
     size_t pointer = 0;
     unsigned char *memory = (unsigned char*) calloc(MEMORY_SIZE, 1);
 
-    size_t command_count = 0;
-    char *commands = read_source_file("program.bf", &command_count);
+    size_t command_counter = 0;
+    char *commands = read_source_file("program.bf", &command_counter);
 
-    for (int i = 0; i < command_count; i++) {
+    for (int i = 0; i < command_counter; i++) {
         if (commands[i] == MOVE_LEFT) move_left(&pointer);
         else if (commands[i] == MOVE_RIGHT) move_right(&pointer);
         else if (commands[i] == INCREMENT) increment(memory + pointer);
@@ -103,19 +103,19 @@ int main(void) {
 }
 
 void move_left(size_t *pointer) {
-    if (*pointer >= MEMORY_SIZE - 1) {
-        printf("Attempted to access memory beyond the right bound\n");
-        exit(1);
-    }
-    *pointer += 1;
-}
-
-void move_right(size_t *pointer) {
-    if (*pointer <= 0) {
+    if (*pointer == 0) {
         printf("Attempted to access memory beyond the left bound\n");
         exit(1);
     }
     *pointer -= 1;
+}
+
+void move_right(size_t *pointer) {
+    if (*pointer == MEMORY_SIZE - 1) {
+        printf("Attempted to access memory beyond the right bound\n");
+        exit(1);
+    }
+    *pointer += 1;
 }
 
 void increment(unsigned char *cell) {
@@ -133,7 +133,7 @@ void input(unsigned char *cell) { *cell = getchar(); }
 void output(unsigned char *cell) { putchar(*cell); }
 
 void open_loop() {
-    pritnf("'[' not implemented\n");
+    printf("'[' not implemented\n");
 }
 
 void close_loop() {
