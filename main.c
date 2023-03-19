@@ -21,6 +21,7 @@
 char *read_source_file(char *name, size_t *command_count) {
     unsigned char buffer[BUFFER_SIZE];
     size_t counter = 0;
+
     FILE *file = fopen(name, "rb");
     if (file == NULL) {
         printf("Error while opening the brainfuck source file");
@@ -101,10 +102,16 @@ int main(void) {
         } else if (commands[i] == OUTPUT) {
             putchar(memory[pointer]);
 
-        } else if (commands[i] == OPEN_LOOP) {
-            printf("'[' not implemented\n");
-        } else if (commands[i] == CLOSE_LOOP) {
-            printf("']' not implemented\n");
+        } else if (commands[i] == OPEN_LOOP && memory[pointer] == 0) {
+            while (1) {
+                if (commands[i] == CLOSE_LOOP) break;
+                i++;
+            }
+        } else if (commands[i] == CLOSE_LOOP && memory[pointer] != 0) {
+            while (1) {
+                if (commands[i] == OPEN_LOOP) break;
+                i--;
+            }
         }
     }
 
@@ -117,3 +124,29 @@ int main(void) {
 
     return 0;
 }
+
+/*
+Attempted implementation of loops:
+
+opening:
+for (size_t bracket_counter = 0; i < command_counter; i++) {
+    if (commands[i] == CLOSE_LOOP && bracket_counter == 0) break;
+
+    if (commands[i] == OPEN_LOOP) {
+        bracket_counter++;
+    } else if (commands[i] == CLOSE_LOOP) {
+        bracket_counter--;
+    }
+}
+
+closing:
+for (size_t bracket_counter = 0; i >= 0; i--) {
+    if (commands[i] == OPEN_LOOP && bracket_counter == 0) break;
+
+    if (commands[i] == CLOSE_LOOP) {
+        bracket_counter++;
+    } else if (commands[i] == OPEN_LOOP) {
+        bracket_counter--;
+    }
+}
+*/
