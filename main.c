@@ -26,9 +26,10 @@ void close_loop(); // ]
 
 // size of the brainfuck memory array
 #define MEMORY_SIZE 1024
+#define BUFFER_SIZE 10000
 
 char *read_source_file(char *name, size_t *command_count) {
-    unsigned char buffer[10000];
+    unsigned char buffer[BUFFER_SIZE];
     size_t counter = 0;
     FILE *file = fopen(name, "rb");
     if (file == NULL) {
