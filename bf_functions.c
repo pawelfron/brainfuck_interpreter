@@ -2,45 +2,44 @@
 
 void increment_pointer(size_t *pointer) {
     if (*pointer >= MEMORY_SIZE - 1) {
-        printf("Attempted to access memory beyond the right bound");
+        printf("Attempted to access memory beyond the right bound\n");
         exit(1);
     }
-    *pointer++;
+    *pointer += 1;
 
 }
 
 void decrement_pointer(size_t *pointer) {
     if (*pointer <= 0) {
-        printf("Attempted to access memory beyond the left bound");
+        printf("Attempted to access memory beyond the left bound\n");
         exit(1);
     }
-    *pointer--;
+    *pointer -= 1;
 }
 
-void increment_cell(size_t pointer, unsigned char **memory) {
-    if (*memory[pointer] == 0b11111111) *memory[pointer] = 0b00000000;
-    else *memory[pointer]++;
+void increment_cell(unsigned char *cell) {
+    if (*cell == 255) *cell = 0;
+    *cell += 1;
 }
 
-void decrement_cell(size_t pointer, unsigned char **memory) {
-    if (*memory[pointer] == 0b00000000) *memory[pointer] = 0b11111111;
-    else *memory[pointer]++;
+void decrement_cell(unsigned char *cell) {
+    if (*cell == 0) *cell = 255;
+    *cell -= 1;
 }
 
-void input(size_t pointer, unsigned char *memory) {
-    memory[pointer] = getchar();
+void input(unsigned char *cell) {
+    *cell = getchar();
 }
 
-void output(size_t pointer, unsigned char *memory) {
-    putchar(memory[pointer]);
+void output(unsigned char *cell) {
+    putchar(*cell);
 }
 /*
-void opening_jump() {
+void opening_jump(size_t pointer, unsigned char *memory, FILE *file) {
 
 }
 
-void closing_jump() {
+void closing_jump(size_t pointer, unsigned char *memory, FILE *file) {
 
 }
-
 */

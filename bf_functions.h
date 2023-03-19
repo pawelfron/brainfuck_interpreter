@@ -5,9 +5,9 @@
 
 void increment_pointer(size_t *pointer); // >
 void decrement_pointer(size_t *pointer); // <
-void increment_cell(size_t pointer, unsigned char **memory); // +
-void decrement_cell(size_t pointer, unsigned char **memory); // -
-void input(size_t pointer, unsigned char *memory); // .
-void output(size_t pointer, unsigned char *memory); // ,
-void opening_jump(); // [
-void closing_jump(); // ]
+void increment_cell(unsigned char *cell); // +
+void decrement_cell(unsigned char *cell); // -
+void input(unsigned char *cell); // ,
+void output(unsigned char *cell); // .
+void opening_jump(size_t pointer, unsigned char *memory, FILE *file); // [
+void closing_jump(size_t pointer, unsigned char *memory, FILE *file); // ]

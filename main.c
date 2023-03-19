@@ -1,4 +1,4 @@
-/* libraries for the bs below */
+/* Libraries for the bs below */
 #include <termios.h>
 #include <unistd.h>
 /* ---- */
@@ -8,11 +8,11 @@
 int main(void) {
 
     /* 
-    some bs to change the behaviour of the terminal
-    it causes the getchar() function to get just single character from stdin
+    Some bs to change the behaviour of the terminal.
+    It causes the getchar() function to get just a single character from stdin, without the need to press enter.
+    I have no clue how any of this works, but it works.
 
-    based on ChatGPT answer someone answering this question on Stack Overflow
-    https://stackoverflow.com/questions/1798511/how-to-avoid-pressing-enter-with-getchar-for-reading-a-single-character-only
+    based on ChatGPT answer and someone answering this question on Stack Overflow: https://stackoverflow.com/questions/1798511/how-to-avoid-pressing-enter-with-getchar-for-reading-a-single-character-only
     */
     struct termios oldattr, newattr;
     tcgetattr(STDIN_FILENO, &oldattr);
@@ -21,10 +21,8 @@ int main(void) {
     tcsetattr(STDIN_FILENO, TCSANOW, &newattr);
     /* --- */
 
-    unsigned char memory[MEMORY_SIZE];
+    unsigned char *memory = (unsigned char*) calloc(MEMORY_SIZE, 1);
     size_t pointer = 0;
-    for (size_t i = 0; i < MEMORY_SIZE; i++)
-        memory[i] = 0;
 
     FILE *file = fopen("program.bf", "rb");
     if (file == NULL) {
@@ -34,13 +32,34 @@ int main(void) {
 
     char character = fgetc(file);
     while (!feof(file)) {
-        printf("%c", character);
+        switch (character) {
+            case '>':
+                increment_pointer(&pointer);
+                break;
+            case '<':
+                decrement_pointer(&pointer);
+                break;
+            case '+':
+                increment_cell(memory + pointer);
+                break;
+            case '-':
+                decrement_cell(memory + pointer);
+                break;
+            case ',':
+                input(memory + pointer);
+                break;
+            case '.':
+                output(memory + pointer);
+                break;
+        }
         character = fgetc(file);
     }
 
     fclose(file);
 
-    /* reversing the changes to terminal made by the bs above */
+    free(memory);
+
+    /* Reversing the changes to the terminal made by the bs above */
     tcsetattr( STDIN_FILENO, TCSANOW, &oldattr);
     /* --- */
 
