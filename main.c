@@ -6,26 +6,16 @@
 #include <unistd.h>
 /* ---- */
 
-void move_left(size_t *pointer); // <
-void move_right(size_t *pointer); // >
-void increment(unsigned char *cell); // +
-void decrement(unsigned char *cell); // -
-void input(unsigned char *cell); // ,
-void output(unsigned char *cell); // .
-void open_loop(); // [
-void close_loop(); // ]
+#define MOVE_LEFT 0 // <
+#define MOVE_RIGHT 1 // >
+#define INCREMENT 2 // +
+#define DECREMENT 3 // -
+#define INPUT 4 // ,
+#define OUTPUT 5 // .
+#define OPEN_LOOP 6 // [
+#define CLOSE_LOOP 7 // ]
 
-#define MOVE_LEFT 0
-#define MOVE_RIGHT 1
-#define INCREMENT 2
-#define DECREMENT 3
-#define INPUT 4
-#define OUTPUT 5
-#define OPEN_LOOP 6
-#define CLOSE_LOOP 7
-
-// size of the brainfuck memory array
-#define MEMORY_SIZE 1024
+#define MEMORY_SIZE 1024 // size of the brainfuck memory array
 #define BUFFER_SIZE 10000
 
 char *read_source_file(char *name, size_t *command_count) {
@@ -83,14 +73,39 @@ int main(void) {
     char *commands = read_source_file("program.bf", &command_counter);
 
     for (int i = 0; i < command_counter; i++) {
-        if (commands[i] == MOVE_LEFT) move_left(&pointer);
-        else if (commands[i] == MOVE_RIGHT) move_right(&pointer);
-        else if (commands[i] == INCREMENT) increment(memory + pointer);
-        else if (commands[i] == DECREMENT) decrement(memory + pointer);
-        else if (commands[i] == INPUT) input(memory + pointer);
-        else if (commands[i] == OUTPUT) output(memory + pointer);
-        else if (commands[i] == OPEN_LOOP) open_loop();
-        else if (commands[i] == CLOSE_LOOP) close_loop();
+        if (commands[i] == MOVE_LEFT) {
+            if (pointer == 0) {
+                printf("Attempted to move pointer beyond the left bound\n");
+                return 1;
+            }
+            pointer--;
+
+        } else if (commands[i] == MOVE_RIGHT) {
+            if (pointer == MEMORY_SIZE - 1) {
+                printf("Attempted to move pointer beyond the right bound\n");
+                return 1;
+            }
+            pointer++;
+
+        } else if (commands[i] == INCREMENT){
+            if (memory[pointer] == 255) memory[pointer] = 0;
+            else memory[pointer]++;
+
+        } else if (commands[i] == DECREMENT) {
+            if (memory[pointer] == 0) memory[pointer] = 255;
+            else memory[pointer]--;
+
+        } else if (commands[i] == INPUT) {
+            memory[pointer] = getchar();
+
+        } else if (commands[i] == OUTPUT) {
+            putchar(memory[pointer]);
+
+        } else if (commands[i] == OPEN_LOOP) {
+            printf("'[' not implemented\n");
+        } else if (commands[i] == CLOSE_LOOP) {
+            printf("']' not implemented\n");
+        }
     }
 
     free(memory);
@@ -101,42 +116,4 @@ int main(void) {
     /* --- */
 
     return 0;
-}
-
-void move_left(size_t *pointer) {
-    if (*pointer == 0) {
-        printf("Attempted to access memory beyond the left bound\n");
-        exit(1);
-    }
-    *pointer -= 1;
-}
-
-void move_right(size_t *pointer) {
-    if (*pointer == MEMORY_SIZE - 1) {
-        printf("Attempted to access memory beyond the right bound\n");
-        exit(1);
-    }
-    *pointer += 1;
-}
-
-void increment(unsigned char *cell) {
-    if (*cell == 255) *cell = 0;
-    else *cell += 1;
-}
-
-void decrement(unsigned char *cell) {
-    if (*cell == 0) *cell = 255;
-    else *cell -= 1;
-}
-
-void input(unsigned char *cell) { *cell = getchar(); }
-
-void output(unsigned char *cell) { putchar(*cell); }
-
-void open_loop() {
-    printf("'[' not implemented\n");
-}
-
-void close_loop() {
-    printf("']' not implemented\n");
 }
