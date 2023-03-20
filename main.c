@@ -1,10 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
-
-/* Libraries specific to UNIX-like systems */
-#include <termios.h>
 #include <unistd.h>
+#include <termios.h> /* Library specific to UNIX-like systems */
 
 #define MOVE_LEFT 0 // <
 #define MOVE_RIGHT 1 // >
