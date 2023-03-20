@@ -1,9 +1,11 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <unistd.h>
+#include <termios.h>
 #include "main.h"
 
-/* global variables, so that is possible to access them from the signal_handler funtion (which can't take custom arguments) */
-/* structs containing terminal settings, used by the function change_terminal_behaviour */
-struct termios oldattr, newattr;
-/* pointers to array of instructions and to the internal Brainfuck memory */
+struct termios old_attributes, new_attributes;
 unsigned char *commands = NULL, *memory = NULL; 
 
 int main(int argument_count, char *arguments[]) {
@@ -43,13 +45,13 @@ int main(int argument_count, char *arguments[]) {
         }
     }
 
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldattr); /* restore previous terminal settings */
+    tcsetattr(STDIN_FILENO, TCSANOW, &old_attributes); // restore previous terminal settings
     free(commands);
     free(memory);
     return 0;
 }
 
-/* TODO a better way to read the sourc file */
+/* TODO: a better way to read the source file */
 size_t read_source_file(char name[]) {
     FILE *file = fopen(name, "rb");
     if (file == NULL) raise_error("Couldn't open the source file");
@@ -89,15 +91,15 @@ size_t read_source_file(char name[]) {
 }
 
 void change_terminal_behaviour() {
-    tcgetattr(STDIN_FILENO, &oldattr);
-    newattr = oldattr;
-    newattr.c_lflag &= ~(ICANON);
-    tcsetattr(STDIN_FILENO, TCSANOW, &newattr);
+    tcgetattr(STDIN_FILENO, &old_attributes); // get current terminal settings
+    new_attributes = old_attributes;
+    new_attributes.c_lflag &= ~(ICANON); // turn on canonical mode
+    tcsetattr(STDIN_FILENO, TCSANOW, &new_attributes); // set new terminal settings
 }
 
 void raise_error(char error_message[]) {
     printf("\nError: %s\n", error_message);
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldattr); /* restore previous terminal settings */
+    tcsetattr(STDIN_FILENO, TCSANOW, &old_attributes); // restore previous terminal settings
     free(commands);
     free(memory);
     _exit(1);
