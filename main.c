@@ -36,23 +36,17 @@ int main(void) {
     if (memory == NULL) raise_error("Couldn't allocate memory\n");
 
     for (int i = 0; i < command_counter; i++) {
-        if (commands[i] == MOVE_LEFT) {
-            if (pointer == 0) raise_error("Attempted to move pointer beyond the left bound");
-            pointer--;
-        } else if (commands[i] == MOVE_RIGHT) {
-            if (pointer == MEMORY_SIZE - 1) raise_error("Attempted to move pointer beyond the right bound");
-            pointer++;
-        } else if (commands[i] == INCREMENT){
-            if (memory[pointer] == 255) memory[pointer] = 0;
-            else memory[pointer]++;
-        } else if (commands[i] == DECREMENT) {
-            if (memory[pointer] == 0) memory[pointer] = 255;
-            else memory[pointer]--;
-        } else if (commands[i] == INPUT) {
-            memory[pointer] = getchar();
-        } else if (commands[i] == OUTPUT) {
-            putchar(memory[pointer]);
-        } else if (commands[i] == OPEN_LOOP && memory[pointer] == 0) {
+        if (commands[i] == MOVE_LEFT && pointer == 0) raise_error("Attempted to move pointer beyond the left bound");
+        else if (commands[i] == MOVE_LEFT) pointer--;
+        else if (commands[i] == MOVE_RIGHT && pointer == MEMORY_SIZE - 1) raise_error("Attempted to move pointer beyond the right bound");
+        else if (commands[i] == MOVE_RIGHT) pointer++;
+        else if (commands[i] == INCREMENT && memory[pointer] == 255) memory[pointer] = 0;
+        else if (commands[i] == INCREMENT) memory[pointer]++;
+        else if (commands[i] == DECREMENT && memory[pointer] == 0) memory[pointer] = 255;
+        else if (commands[i] == DECREMENT) memory[pointer]--;
+        else if (commands[i] == INPUT) memory[pointer] = getchar();
+        else if (commands[i] == OUTPUT) putchar(memory[pointer]);
+        else if (commands[i] == OPEN_LOOP && memory[pointer] == 0) {
             i++;
             for (size_t bracket_counter = 0; commands[i] != CLOSE_LOOP || bracket_counter != 0; i++) {
                 if (commands[i] == OPEN_LOOP) bracket_counter++;
@@ -72,7 +66,6 @@ int main(void) {
     free(memory);
     return 0;
 }
-
 
 /* TODO read the source file in 1kb chunks */
 size_t read_source_file(char *name) {
