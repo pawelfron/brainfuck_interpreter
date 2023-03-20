@@ -1,37 +1,19 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <signal.h>
-#include <unistd.h>
-#include <termios.h> /* Library specific to UNIX-like systems */
+#include "main.h"
 
-#define MOVE_LEFT 0 // <
-#define MOVE_RIGHT 1 // >
-#define INCREMENT 2 // +
-#define DECREMENT 3 // -
-#define INPUT 4 // ,
-#define OUTPUT 5 // .
-#define OPEN_LOOP 6 // [
-#define CLOSE_LOOP 7 // ]
-
-#define PROGRAM_NAME "examples/hello_world.bf" /* TODO add a proper way to select files */
-
-#define MEMORY_SIZE 1024 /* size of the brainfuck memory array */
-#define BUFFER_SIZE 5120 /* size of the buffer for loading the source file */
-
-/* global variables, so that is possible to free heap-allocated memory and to restore previous terminal settigns from the signal_handler funtion (which can't take custom arguments) */
+/* global variables, so that is possible to access them from the signal_handler funtion (which can't take custom arguments) */
+/* structs containing terminal settings, used by the function change_terminal_behaviour */
 struct termios oldattr, newattr;
+/* pointers to array of instructions and to the internal Brainfuck memory */
 unsigned char *commands = NULL, *memory = NULL; 
 
-size_t read_source_file(char *name); /* loads the entire program to memory, without comments, returns the number of instructions */
-void change_terminal_behaviour(); /* changes the behaviour of the terminal */
-void raise_error(char *error_message); /* frees heap-allocated memory, restores the previous terminal settings and exits */
-void signal_handler(int signal_number); /* custom signal handler; necessery due to changes to the default terminal behaviour */
-
-int main(void) {
+int main(int argument_count, char *arguments[]) {
     change_terminal_behaviour();
     signal(SIGINT, signal_handler);
 
-    size_t pointer = 0, command_counter = read_source_file(PROGRAM_NAME);
+    if (argument_count == 1) raise_error("Expected a source file name");
+    if (argument_count > 2) raise_error("Expected only one argument");
+
+    size_t pointer = 0, command_counter = read_source_file(arguments[1]);
     memory = (unsigned char*) calloc(MEMORY_SIZE, 1);
     if (memory == NULL) raise_error("Couldn't allocate memory\n");
 
@@ -61,14 +43,14 @@ int main(void) {
         }
     }
 
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldattr); /* restore the previous terminal settings */
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldattr); /* restore previous terminal settings */
     free(commands);
     free(memory);
     return 0;
 }
 
-/* TODO read the source file in 1kb chunks */
-size_t read_source_file(char *name) {
+/* TODO a better way to read the sourc file */
+size_t read_source_file(char name[]) {
     FILE *file = fopen(name, "rb");
     if (file == NULL) raise_error("Couldn't open the source file");
 
@@ -88,17 +70,15 @@ size_t read_source_file(char *name) {
             buffer[command_counter++] = CLOSE_LOOP;
             if (bracket_counter == 0) {
                 fclose(file);
-                raise_error("Square brackets don't match");
+                raise_error("Not all closed square brackets have a matching open bracket");
             }
             bracket_counter--;
         }
-
         character = fgetc(file);
     }
-
     fclose(file);
 
-    if (bracket_counter != 0) raise_error("Square brackets don't match");
+    if (bracket_counter != 0) raise_error("Not all open square brackets have a matching closed bracket");
 
     commands = (unsigned char *) malloc(command_counter);
     if (commands == NULL) raise_error("Couldn't allocate memory\n");
@@ -109,16 +89,15 @@ size_t read_source_file(char *name) {
 }
 
 void change_terminal_behaviour() {
-    /*  The code below causes the getchar() function to get just a single character from stdin, without the need to press enter. Based on ChatGPT's answer and this answer on Stack Overflow: https://stackoverflow.com/a/1798833 */
     tcgetattr(STDIN_FILENO, &oldattr);
     newattr = oldattr;
     newattr.c_lflag &= ~(ICANON);
     tcsetattr(STDIN_FILENO, TCSANOW, &newattr);
 }
 
-void raise_error(char *error_message) {
+void raise_error(char error_message[]) {
     printf("\nError: %s\n", error_message);
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldattr); /* restore the previous terminal settings */
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldattr); /* restore previous terminal settings */
     free(commands);
     free(memory);
     _exit(1);
