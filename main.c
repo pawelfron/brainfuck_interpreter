@@ -13,6 +13,8 @@
 #define OPEN_LOOP 6 // [
 #define CLOSE_LOOP 7 // ]
 
+#define PROGRAM_NAME "examples/hello_world.bf" /* TODO add a proper way to select files */
+
 #define MEMORY_SIZE 1024 /* size of the brainfuck memory array */
 #define BUFFER_SIZE 5120 /* size of the buffer for loading the source file */
 
@@ -29,7 +31,7 @@ int main(void) {
     change_terminal_behaviour();
     signal(SIGINT, signal_handler);
 
-    size_t pointer = 0, command_counter = read_source_file("program.bf");
+    size_t pointer = 0, command_counter = read_source_file(PROGRAM_NAME);
     memory = (unsigned char*) calloc(MEMORY_SIZE, 1);
     if (memory == NULL) raise_error("Couldn't allocate memory\n");
 
