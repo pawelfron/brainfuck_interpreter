@@ -6,7 +6,8 @@
 #include "main.h"
 
 struct termios old_attributes, new_attributes;
-unsigned char *commands = NULL, *memory = NULL; 
+Instruction *commands = NULL; 
+unsigned char *memory = NULL;
 
 int main(int argument_count, char *arguments[]) {
     change_terminal_behaviour();
@@ -82,7 +83,7 @@ size_t read_source_file(char name[]) {
 
     if (bracket_counter != 0) raise_error("Not all open square brackets have a matching closed bracket");
 
-    commands = (unsigned char *) malloc(command_counter);
+    commands = (Instruction *) calloc(command_counter, sizeof (Instruction));
     if (commands == NULL) raise_error("Couldn't allocate memory\n");
     for (int i = 0; i < command_counter; i++)
         commands[i] = buffer[i];
