@@ -6,8 +6,9 @@
 #include "main.h"
 
 struct termios old_attributes, new_attributes;
-Instruction *commands = NULL; 
+Instruction *instructions = NULL; 
 unsigned char *memory = NULL;
+int source_file_descriptor;
 
 int main(int argument_count, char *arguments[]) {
     change_terminal_behaviour();
@@ -16,38 +17,57 @@ int main(int argument_count, char *arguments[]) {
     if (argument_count == 1) raise_error("Expected a source file name");
     if (argument_count > 2) raise_error("Expected only one argument");
 
-    size_t pointer = 0, command_counter = read_source_file(arguments[1]);
+    size_t pointer = 0, instruction_counter = read_source_file(arguments[1]);
     memory = (unsigned char*) calloc(MEMORY_SIZE, 1);
     if (memory == NULL) raise_error("Couldn't allocate memory\n");
 
-    for (int i = 0; i < command_counter; i++) {
-        if (commands[i] == MOVE_LEFT && pointer == 0) raise_error("Attempted to move pointer beyond the left bound");
-        else if (commands[i] == MOVE_LEFT) pointer--;
-        else if (commands[i] == MOVE_RIGHT && pointer == MEMORY_SIZE - 1) raise_error("Attempted to move pointer beyond the right bound");
-        else if (commands[i] == MOVE_RIGHT) pointer++;
-        else if (commands[i] == INCREMENT && memory[pointer] == 255) memory[pointer] = 0;
-        else if (commands[i] == INCREMENT) memory[pointer]++;
-        else if (commands[i] == DECREMENT && memory[pointer] == 0) memory[pointer] = 255;
-        else if (commands[i] == DECREMENT) memory[pointer]--;
-        else if (commands[i] == INPUT) memory[pointer] = getchar();
-        else if (commands[i] == OUTPUT) putchar(memory[pointer]);
-        else if (commands[i] == OPEN_LOOP && memory[pointer] == 0) {
-            i++;
-            for (size_t bracket_counter = 0; commands[i] != CLOSE_LOOP || bracket_counter != 0; i++) {
-                if (commands[i] == OPEN_LOOP) bracket_counter++;
-                else if (commands[i] == CLOSE_LOOP) bracket_counter--;
+    for (int i = 0; i < instruction_counter; i++) {
+        switch (instructions[i]) {
+        case MOVE_LEFT:
+            if (pointer == 0) raise_error("Attempted to move pointer beyond the left bound");
+            pointer--;
+            break;
+        case MOVE_RIGHT:
+            if (pointer == MEMORY_SIZE - 1) raise_error("Attempted to move pointer beyond the right bound");
+            pointer++;
+            break;
+        case INCREMENT:
+            if (memory[pointer] == 255) memory[pointer] = 0;
+            else memory[pointer]++;
+            break;
+        case DECREMENT:
+            if (memory[pointer] == 0) memory[pointer] = 255;
+            else memory[pointer]--;
+            break;
+        case INPUT:
+            memory[pointer] = getchar();
+            break;
+        case OUTPUT:
+            putchar(memory[pointer]);
+            break;
+        case OPEN_LOOP:
+            if (memory[pointer] == 0) {
+                i++;
+                for (size_t bracket_counter = 0; instructions[i] != CLOSE_LOOP || bracket_counter != 0; i++) {
+                    if (instructions[i] == OPEN_LOOP) bracket_counter++;
+                    else if (instructions[i] == CLOSE_LOOP) bracket_counter--;
+                }
             }
-        } else if (commands[i] == CLOSE_LOOP && memory[pointer] != 0) { 
-            i--;
-            for (size_t bracket_counter = 0; commands[i] != OPEN_LOOP || bracket_counter != 0 ; i--) {
-                if (commands[i] == CLOSE_LOOP) bracket_counter++;
-                else if (commands[i] == OPEN_LOOP) bracket_counter--;
+            break;
+        case CLOSE_LOOP:
+            if (memory[pointer] != 0) {
+                i--;
+                for (size_t bracket_counter = 0; instructions[i] != OPEN_LOOP || bracket_counter != 0 ; i--) {
+                    if (instructions[i] == CLOSE_LOOP) bracket_counter++;
+                    else if (instructions[i] == OPEN_LOOP) bracket_counter--;
+                }
             }
+            break;
         }
     }
 
     tcsetattr(STDIN_FILENO, TCSANOW, &old_attributes); // restore previous terminal settings
-    free(commands);
+    free(instructions);
     free(memory);
     return 0;
 }
@@ -56,42 +76,78 @@ int main(int argument_count, char *arguments[]) {
 size_t read_source_file(char name[]) {
     FILE *file = fopen(name, "rb");
     if (file == NULL) raise_error("Couldn't open the source file");
+    source_file_descriptor = fileno(file);
 
-    size_t command_counter, bracket_counter = 0;
-    unsigned char buffer[BUFFER_SIZE], character = fgetc(file);
-    while(!feof(file)) {
-        if (character == '<') buffer[command_counter++] = MOVE_LEFT;
-        else if (character == '>') buffer[command_counter++] = MOVE_RIGHT;
-        else if (character == '+') buffer[command_counter++] = INCREMENT;
-        else if (character == '-') buffer[command_counter++] = DECREMENT;
-        else if (character == ',') buffer[command_counter++] = INPUT;
-        else if (character == '.') buffer[command_counter++] = OUTPUT;
-        else if (character == '[') {
-            buffer[command_counter++] = OPEN_LOOP;
+    size_t instruction_counter = 0, bracket_counter = 0, chunk_counter = 0;
+    unsigned char buffer[BUFFER_SIZE];
+
+    for (unsigned char character = fgetc(file); !feof(file); character = fgetc(file)) {
+        size_t buffer_index = instruction_counter - chunk_counter * BUFFER_SIZE;
+        switch (character) {
+        case '<':
+            buffer[buffer_index] = MOVE_LEFT;
+            instruction_counter++;
+            break;
+        case '>':
+            buffer[buffer_index] = MOVE_RIGHT;
+            instruction_counter++;
+            break;
+        case '+':
+            buffer[buffer_index] = INCREMENT;
+            instruction_counter++;
+            break;
+        case '-':
+            buffer[buffer_index] = DECREMENT;
+            instruction_counter++;
+            break;
+        case ',':
+            buffer[buffer_index] = INPUT;
+            instruction_counter++;
+            break;
+        case '.':
+            buffer[buffer_index] = OUTPUT;
+            instruction_counter++;
+            break;
+        case '[':
+            buffer[buffer_index] = OPEN_LOOP;
             bracket_counter++;
-        } else if (character == ']') {
-            buffer[command_counter++] = CLOSE_LOOP;
-            if (bracket_counter == 0) {
-                fclose(file);
-                raise_error("Not all closed square brackets have a matching open bracket");
-            }
+            instruction_counter++;
+            break;
+        case ']':
+            buffer[buffer_index] = CLOSE_LOOP;
+            if (bracket_counter == 0) raise_error("Not all closed square brackets have a matching open bracket");
             bracket_counter--;
+            instruction_counter++;
+            break;
         }
-        character = fgetc(file);
+
+        // After one chunk has been read, the instructions array is reallocated, so the buffer can be used to read the next chunk
+        if (buffer_index == BUFFER_SIZE - 1) {
+            reallocate_instructions(instruction_counter, chunk_counter, buffer);
+            chunk_counter++;
+        }
     }
     fclose(file);
 
     if (bracket_counter != 0) raise_error("Not all open square brackets have a matching closed bracket");
 
-    commands = (Instruction *) calloc(command_counter, sizeof (Instruction));
-    if (commands == NULL) raise_error("Couldn't allocate memory\n");
-    for (int i = 0; i < command_counter; i++)
-        commands[i] = buffer[i];
+    // Final allocation, when the last chunk of the source file didn't completely fill the buffer
+    reallocate_instructions(instruction_counter, chunk_counter, buffer);
 
-    return command_counter;
+    return instruction_counter;
 }
 
-void change_terminal_behaviour() {
+void reallocate_instructions(size_t instruction_counter, size_t chunk_counter, unsigned char *buffer) {
+    Instruction *new_instructions = (Instruction *) realloc(instructions, instruction_counter * sizeof (Instruction));
+    if (new_instructions == NULL) raise_error("Couldn't allocate memory\n");
+    instructions = new_instructions;
+
+    size_t starting_point = chunk_counter * BUFFER_SIZE;
+    for (size_t i = 0; i < instruction_counter - starting_point; i++)
+        instructions[starting_point + i] = buffer[i];
+}
+
+void change_terminal_behaviour(void) {
     tcgetattr(STDIN_FILENO, &old_attributes); // get current terminal settings
     new_attributes = old_attributes;
     new_attributes.c_lflag &= ~(ICANON); // turn on canonical mode
@@ -101,7 +157,8 @@ void change_terminal_behaviour() {
 void raise_error(char error_message[]) {
     printf("\nError: %s\n", error_message);
     tcsetattr(STDIN_FILENO, TCSANOW, &old_attributes); // restore previous terminal settings
-    free(commands);
+    close(source_file_descriptor); // in this case, it is safe to close the file even if it has already been closed - no other file will take the source file's descriptor; it is also neccesary to close it here, since the raise_error function can be called when the file is still open
+    free(instructions);
     free(memory);
     _exit(1);
 }
