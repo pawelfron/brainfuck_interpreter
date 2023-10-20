@@ -1,7 +1,32 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <termios.h>
+
+#ifdef _WIN32
+    #include <conio.h>
+    unsigned char get_character() { return getche(); }
+#else
+    #include <unistd.h>
+    #include <termios.h>
+
+    struct termios old_attributes, new_attributes;
+
+    // Reverses the changes made by set_input_mode
+    void reset_input_mode(void) {
+        tcsetattr(STDIN_FILENO, TCSANOW, &old_attributes);
+    }
+
+    // Turns on canonical mode which, among other things, causes the getchar() function to get just a single character from stdin, without the need to press enter. Code based on ChatGPT's answer and this answer on Stack Overflow: https://stackoverflow.com/a/1798833
+    void set_input_mode(void) {
+        tcgetattr(STDIN_FILENO, &old_attributes); // get current terminal settings
+        new_attributes = old_attributes;
+        new_attributes.c_lflag &= ~(ICANON); // turn on canonical mode
+        tcsetattr(STDIN_FILENO, TCSANOW, &new_attributes); // set new terminal settings
+
+        atexit(reset_input_mode);
+    }
+
+    unsigned char get_character() { return getchar(); }
+#endif
 
 typedef enum {
     MOVE_LEFT, // <
@@ -18,13 +43,11 @@ typedef enum {
 #define BUFFER_SIZE 1024 // Size of the buffer for reading the source file
 
 void read_source_file(char name[], Instruction **instructions, size_t *instruction_counter); // Loads the program to memory
-void set_input_mode(void); // Turns on canonical mode which, among other things, causes the getchar() function to get just a single character from stdin, without the need to press enter. Code based on ChatGPT's answer and this answer on Stack Overflow: https://stackoverflow.com/a/1798833
-void reset_input_mode(void); // Reverses the changes made by set_input_mode
-
-struct termios old_attributes, new_attributes;
 
 int main(int argument_count, char *arguments[]) {
-    set_input_mode();
+    #ifndef _WIN32
+        set_input_mode();
+    #endif
 
     if (argument_count == 1) {
         printf("Error: Expected a filename!\n");
@@ -81,7 +104,7 @@ int main(int argument_count, char *arguments[]) {
             break;
 
         case INPUT:
-            memory[pointer] = getchar();
+            memory[pointer] = get_character();
             break;
 
         case OUTPUT:
@@ -216,17 +239,4 @@ void read_source_file(char name[], Instruction **instructions, size_t *instructi
     size_t starting_point = chunk_counter * BUFFER_SIZE;
     for (size_t i = 0; i < *instruction_counter - starting_point; i++)
         (*instructions)[starting_point + i] = buffer[i];
-}
-
-void set_input_mode(void) {
-    tcgetattr(STDIN_FILENO, &old_attributes); // get current terminal settings
-    new_attributes = old_attributes;
-    new_attributes.c_lflag &= ~(ICANON); // turn on canonical mode
-    tcsetattr(STDIN_FILENO, TCSANOW, &new_attributes); // set new terminal settings
-
-    atexit(reset_input_mode);
-}
-
-void reset_input_mode(void) {
-    tcsetattr(STDIN_FILENO, TCSANOW, &old_attributes);
 }
