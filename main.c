@@ -39,8 +39,8 @@ typedef enum {
     CLOSE_LOOP // ]
 } Instruction;
 
-#define MEMORY_SIZE 32768 // Size of the brainfuck internal memory array
-#define BUFFER_SIZE 1024 // Size of the buffer for reading the source file
+#define MEMORY_SIZE 40000 // Size of the brainfuck internal memory array
+#define BUFFER_SIZE 1000 // Size of the buffer for reading the source file
 
 void read_source_file(char name[], Instruction **instructions, size_t *instruction_counter); // Loads the program to memory
 
@@ -54,7 +54,7 @@ int main(int argument_count, char *arguments[]) {
         exit(1);
     }
     if (argument_count > 2) {
-        printf("Error: Expected only one argument!!\n");
+        printf("Error: Expected only one argument!\n");
         exit(1);
     }
 
